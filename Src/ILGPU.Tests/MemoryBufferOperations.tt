@@ -11,14 +11,16 @@ using Xunit.Abstractions;
 
 // disable: max_line_length
 <#
-var copyOperations = new string[] { "CopyFrom", "CopyTo" };
-var arrayTypes = new string[] { "Jagged", "Multidimensional" };
+// var copyOperations = new string[] { "CopyFrom", "CopyTo" };
+var copyOperations = new string[] { };
 #>
 namespace ILGPU.Tests
 {
     public abstract class MemoryBufferOperations : TestBase
     {
-        protected MemoryBufferOperations(ITestOutputHelper output, TestContext testContext)
+        protected MemoryBufferOperations(
+            ITestOutputHelper output,
+            TestContext testContext)
             : base(output, testContext)
         { }
 
@@ -36,7 +38,7 @@ namespace ILGPU.Tests
             "Performance",
             "CA1814:Prefer jagged arrays over multidimensional",
             Justification = "Required for test cases")]
-        private static int[,] InitializeJaggedArray2D(int x, int y)
+        private static int[,] InitializeArray2D(int x, int y)
         {
             var counter = 0;
             var src = new int[x, y];
@@ -53,7 +55,7 @@ namespace ILGPU.Tests
             "Performance",
             "CA1814:Prefer jagged arrays over multidimensional",
             Justification = "Required for test cases")]
-        private static int[,,] InitializeJaggedArray3D(int x, int y, int z)
+        private static int[,,] InitializeArray3D(int x, int y, int z)
         {
             var counter = 0;
             var src = new int[x, y, z];
@@ -69,337 +71,131 @@ namespace ILGPU.Tests
             return src;
         }
 
-        private static int[][] InitializeMultidimensionalArray2D(int x, int y)
-        {
-            var counter = 0;
-            var src = new int[x][];
-            for (var i = 0; i < x; i++)
-            {
-                src[i] = new int[y];
-                for (var j = 0; j < y; j++)
-                    src[i][j] = counter++;
-            }
-
-            return src;
-        }
-        
-        private static int[][][] InitializeMultidimensionalArray3D(int x, int y, int z)
-        {
-            var counter = 0;
-            var src = new int[x][][];
-            for (var i = 0; i < x; i++)
-            {
-                src[i] = new int[y][];
-                for (var j = 0; j < y; j++)
-                {
-                    src[i][j] = new int[z];
-                    for (var k = 0; k < z; k++)
-                        src[i][j][k] = counter++;
-                }
-            }
-
-            return src;
-        }
-
 <#  foreach (var copyOperation in copyOperations) { #>
         [Theory]
         [InlineData(32)]
         [InlineData(1024)]
         public void <#= copyOperation #>1D(int x)
         {
-            var extent = new Index1(x);
+            var extent = new Index1D(x);
             var src = InitializeArray1D(x);
-            using var dst = Accelerator.Allocate<int>(extent);
+            using var dst = Accelerator.Allocate1D<int>(extent);
 
             // Full copy
-            dst.<#= copyOperation #>(src, Index1.Zero, Index1.Zero, extent);
-
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index1(-1), Index1.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index1(x + 1), Index1.Zero, extent));
-
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index1.Zero, new Index1(-1), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index1.Zero, new Index1(x + 1), extent));
-
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index1.Zero, Index1.Zero, new Index1(-1)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index1.Zero, Index1.Zero, new Index1(x + 1)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index1.Zero, new Index1(x - 1), new Index1(2)));
+            dst.<#= copyOperation #>(src);
 
             // Partial copy
-            var half = new Index1(x / 2);
+            var half = new Index1D(x / 2);
 
-            dst.<#= copyOperation #>(src, new Index1(half.X), Index1.Zero, new Index1(extent.X - half.X));
-            dst.<#= copyOperation #>(src, new Index1(half.X - 1), Index1.Zero, new Index1(extent.X - half.X));
-            dst.<#= copyOperation #>(src, new Index1(half.X + 1), Index1.Zero, new Index1(extent.X - (half.X + 1)));
-            Assert.Throws<ArgumentOutOfRangeException>(() =>
-                dst.<#= copyOperation #>(src, new Index1(half.X + 1), Index1.Zero, new Index1(extent.X - half.X)));
+            dst.<#= copyOperation #>(src, new Index1D(half.X), Index1D.Zero, new Index1D(extent.X - half.X));
+            dst.<#= copyOperation #>(src, new Index1D(half.X - 1), Index1D.Zero, new Index1D(extent.X - half.X));
+            dst.<#= copyOperation #>(src, new Index1D(half.X + 1), Index1D.Zero, new Index1D(extent.X - (half.X + 1)));
 
-            dst.<#= copyOperation #>(src, Index1.Zero, new Index1(half.X), new Index1(extent.X - half.X));
-            dst.<#= copyOperation #>(src, Index1.Zero, new Index1(half.X - 1), new Index1(extent.X - half.X));
-            dst.<#= copyOperation #>(src, Index1.Zero, new Index1(half.X + 1), new Index1(extent.X - (half.X + 1)));
-            if (Accelerator.AcceleratorType == AcceleratorType.Cuda && "<#= copyOperation #>" == "CopyFrom")
-            {
-                // TODO: CPU and OpenCL accelerators, and CopyTo using Cuda accelerator, fails to throw an exception
-                Assert.ThrowsAny<Exception>(() =>
-                    dst.<#= copyOperation #>(src, Index1.Zero, new Index1(half.X + 1), new Index1(extent.X - half.X)));
-            }
+            dst.<#= copyOperation #>(src, Index1D.Zero, new Index1D(half.X), new Index1D(extent.X - half.X));
+            dst.<#= copyOperation #>(src, Index1D.Zero, new Index1D(half.X - 1), new Index1D(extent.X - half.X));
+            dst.<#= copyOperation #>(src, Index1D.Zero, new Index1D(half.X + 1), new Index1D(extent.X - (half.X + 1)));
 
-            dst.<#= copyOperation #>(src, Index1.Zero, Index1.Zero, new Index1(extent.X - half.X));
-            dst.<#= copyOperation #>(src, Index1.Zero, Index1.Zero, new Index1(extent.X - half.X - 1));
-            dst.<#= copyOperation #>(src, Index1.Zero, Index1.Zero, new Index1(extent.X - half.X + 1));
+            dst.<#= copyOperation #>(src, Index1D.Zero, Index1D.Zero, new Index1D(extent.X - half.X));
+            dst.<#= copyOperation #>(src, Index1D.Zero, Index1D.Zero, new Index1D(extent.X - half.X - 1));
+            dst.<#= copyOperation #>(src, Index1D.Zero, Index1D.Zero, new Index1D(extent.X - half.X + 1));
         }
 
 <#  } #>
-<#
-    foreach (var copyOperation in copyOperations)
-    {
-        foreach (var arrayType in arrayTypes)
-        {
-#>
+
+<# foreach (var copyOperation in copyOperations) { #>
         [Theory]
         [InlineData(32, 32)]
         [InlineData(1024, 32)]
         [InlineData(1024, 1024)]
-        public void <#= copyOperation #><#= arrayType #>2D(int x, int y)
+        public void <#= copyOperation #>2D(int x, int y)
         {
-            var extent = new Index2(x, y);
-            var src = Initialize<#= arrayType #>Array2D(x, y);
-            using var dst = Accelerator.Allocate<int>(extent);
+            var extent = new Index2D(x, y);
+            var src = InitializeArray2D(x, y);
+            using var dst = Accelerator.Allocate2D<int>(extent);
 
             // Full copy
-            dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, extent);
-
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index2(-1, 0), Index2.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index2(0, -1), Index2.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index2(-1, -1), Index2.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index2(x + 1, 0), Index2.Zero, extent));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, new Index2(0, y + 1), Index2.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index2(x + 1, y + 1), Index2.Zero, extent));
-
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, new Index2(-1, 0), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, new Index2(0, -1), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, new Index2(-1, -1), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, new Index2(x + 1, 0), extent));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, Index2.Zero, new Index2(0, y + 1), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, new Index2(x + 1, y + 1), extent));
-
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(-1, 0)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(0, -1)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(-1, -1)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(x + 1, 0)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(0, y + 1)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(x + 1, y + 1)));
+            dst.<#= copyOperation #>(src, Index2D.Zero, Index2D.Zero, extent);
 
             // Partial copy
-            var half = new Index2(x / 2, y / 2);
+            var half = new Index2D(x / 2, y / 2);
 
-            dst.<#= copyOperation #>(src, new Index2(half.X, 0), Index2.Zero, new Index2(extent.X - half.X, extent.Y));
-            dst.<#= copyOperation #>(src, new Index2(half.X - 1, 0), Index2.Zero, new Index2(extent.X - half.X, extent.Y));
-            dst.<#= copyOperation #>(src, new Index2(half.X + 1, 0), Index2.Zero, new Index2(extent.X - (half.X + 1), extent.Y));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, new Index2(half.X + 1, 0), Index2.Zero, new Index2(extent.X - half.X, extent.Y)));
+            dst.<#= copyOperation #>(src, new Index2D(half.X, 0), Index2D.Zero, new Index2D(extent.X - half.X, extent.Y));
+            dst.<#= copyOperation #>(src, new Index2D(half.X - 1, 0), Index2D.Zero, new Index2D(extent.X - half.X, extent.Y));
+            dst.<#= copyOperation #>(src, new Index2D(half.X + 1, 0), Index2D.Zero, new Index2D(extent.X - (half.X + 1), extent.Y));
 
-            dst.<#= copyOperation #>(src, new Index2(0, half.Y), Index2.Zero, new Index2(extent.X, extent.Y - half.Y));
-            dst.<#= copyOperation #>(src, new Index2(0, half.Y - 1), Index2.Zero, new Index2(extent.X, extent.Y - half.Y));
-            dst.<#= copyOperation #>(src, new Index2(0, half.Y + 1), Index2.Zero, new Index2(extent.X, extent.Y - (half.Y + 1)));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, new Index2(0, half.Y + 1), Index2.Zero, new Index2(extent.X, extent.Y - half.Y)));
+            dst.<#= copyOperation #>(src, new Index2D(0, half.Y), Index2D.Zero, new Index2D(extent.X, extent.Y - half.Y));
+            dst.<#= copyOperation #>(src, new Index2D(0, half.Y - 1), Index2D.Zero, new Index2D(extent.X, extent.Y - half.Y));
+            dst.<#= copyOperation #>(src, new Index2D(0, half.Y + 1), Index2D.Zero, new Index2D(extent.X, extent.Y - (half.Y + 1)));
 
-            dst.<#= copyOperation #>(src, Index2.Zero, new Index2(half.X, 0), new Index2(extent.X - half.X, extent.Y));
-            dst.<#= copyOperation #>(src, Index2.Zero, new Index2(half.X - 1, 0), new Index2(extent.X - half.X, extent.Y));
-            dst.<#= copyOperation #>(src, Index2.Zero, new Index2(half.X + 1, 0), new Index2(extent.X - (half.X + 1), extent.Y));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index2.Zero, new Index2(half.X + 1, 0), new Index2(extent.X - half.X, extent.Y)));
+            dst.<#= copyOperation #>(src, Index2D.Zero, new Index2D(half.X, 0), new Index2D(extent.X - half.X, extent.Y));
+            dst.<#= copyOperation #>(src, Index2D.Zero, new Index2D(half.X - 1, 0), new Index2D(extent.X - half.X, extent.Y));
+            dst.<#= copyOperation #>(src, Index2D.Zero, new Index2D(half.X + 1, 0), new Index2D(extent.X - (half.X + 1), extent.Y));
 
-            dst.<#= copyOperation #>(src, Index2.Zero, new Index2(0, half.Y), new Index2(extent.X, extent.Y - half.Y));
-            dst.<#= copyOperation #>(src, Index2.Zero, new Index2(0, half.Y - 1), new Index2(extent.X, extent.Y - half.Y));
-            dst.<#= copyOperation #>(src, Index2.Zero, new Index2(0, half.Y + 1), new Index2(extent.X, extent.Y - (half.Y + 1)));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, Index2.Zero, new Index2(0, half.Y + 1), new Index2(extent.X, extent.Y - half.Y)));
+            dst.<#= copyOperation #>(src, Index2D.Zero, new Index2D(0, half.Y), new Index2D(extent.X, extent.Y - half.Y));
+            dst.<#= copyOperation #>(src, Index2D.Zero, new Index2D(0, half.Y - 1), new Index2D(extent.X, extent.Y - half.Y));
+            dst.<#= copyOperation #>(src, Index2D.Zero, new Index2D(0, half.Y + 1), new Index2D(extent.X, extent.Y - (half.Y + 1)));
 
-            dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(extent.X - half.X, extent.Y));
-            dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(extent.X - half.X - 1, extent.Y));
-            dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(extent.X - half.X + 1, extent.Y));
-            dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(extent.X, extent.Y - half.Y));
-            dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(extent.X, extent.Y - half.Y - 1));
-            dst.<#= copyOperation #>(src, Index2.Zero, Index2.Zero, new Index2(extent.X, extent.Y - half.Y + 1));
+            dst.<#= copyOperation #>(src, Index2D.Zero, Index2D.Zero, new Index2D(extent.X - half.X, extent.Y));
+            dst.<#= copyOperation #>(src, Index2D.Zero, Index2D.Zero, new Index2D(extent.X - half.X - 1, extent.Y));
+            dst.<#= copyOperation #>(src, Index2D.Zero, Index2D.Zero, new Index2D(extent.X - half.X + 1, extent.Y));
+            dst.<#= copyOperation #>(src, Index2D.Zero, Index2D.Zero, new Index2D(extent.X, extent.Y - half.Y));
+            dst.<#= copyOperation #>(src, Index2D.Zero, Index2D.Zero, new Index2D(extent.X, extent.Y - half.Y - 1));
+            dst.<#= copyOperation #>(src, Index2D.Zero, Index2D.Zero, new Index2D(extent.X, extent.Y - half.Y + 1));
         }
 
-<#
-        }
-    }
-#>
-<#
-    foreach (var copyOperation in copyOperations)
-    {
-        foreach (var arrayType in arrayTypes)
-        {
-#>
+<# } #>
+<# foreach (var copyOperation in copyOperations) { #>
         [Theory]
         [InlineData(32, 32, 32)]
         [InlineData(512, 32, 32)]
         [InlineData(512, 512, 32)]
-        public void <#= copyOperation #><#= arrayType #>3D(int x, int y, int z)
+        public void <#= copyOperation #>3D(int x, int y, int z)
         {
-            var extent = new Index3(x, y, z);
-            var src = Initialize<#= arrayType #>Array3D(x, y, z);
-            using var dst = Accelerator.Allocate<int>(extent);
+            var extent = new Index3D(x, y, z);
+            var src = InitializeArray3D(x, y, z);
+            using var dst = Accelerator.Allocate1D<int>(extent);
 
             // Full copy
-            dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, extent);
-
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index3(-1, 0, 0), Index3.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index3(0, -1, 0), Index3.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index3(0, 0, -1), Index3.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index3(-1, -1, 0), Index3.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index3(0, -1, -1), Index3.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index3(-1, -1, -1), Index3.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index3(x + 1, 0, 0), Index3.Zero, extent));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, new Index3(0, y + 1, 0), Index3.Zero, extent));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, new Index3(0, 0, z + 1), Index3.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index3(x + 1, y + 1, 0), Index3.Zero, extent));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, new Index3(0, y + 1, z + 1), Index3.Zero, extent));
-            Assert.Throws<ArgumentOutOfRangeException>("sourceOffset", () =>
-                dst.<#= copyOperation #>(src, new Index3(x + 1, y + 1, z + 1), Index3.Zero, extent));
-
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(-1, 0, 0), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, -1, 0), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, 0, -1), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(-1, -1, 0), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, -1, -1), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(-1, -1, -1), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(x + 1, 0, 0), extent));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, y + 1, 0), extent));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, 0, z + 1), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(x + 1, y + 1, 0), extent));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, y + 1, z + 1), extent));
-            Assert.Throws<ArgumentOutOfRangeException>("targetOffset", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(x + 1, y + 1, z + 1), extent));
-
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(-1, 0, 0)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(0, -1, 0)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(0, 0, -1)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(-1, -1, 0)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(0, -1, -1)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(-1, -1, -1)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(x + 1, 0, 0)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(0, y + 1, 0)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(0, 0, z + 1)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(x + 1, y + 1, 0)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(0, y + 1, z + 1)));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(x + 1, y + 1, z + 1)));
+            dst.<#= copyOperation #>(src, Index3D.Zero, Index3D.Zero, extent);
 
             // Partial copy
-            var half = new Index3(x / 2, y / 2, z / 2);
+            var half = new Index3D(x / 2, y / 2, z / 2);
 
-            dst.<#= copyOperation #>(src, new Index3(half.X, 0, 0), Index3.Zero, new Index3(extent.X - half.X, extent.Y, extent.Z));
-            dst.<#= copyOperation #>(src, new Index3(half.X - 1, 0, 0), Index3.Zero, new Index3(extent.X - half.X, extent.Y, extent.Z));
-            dst.<#= copyOperation #>(src, new Index3(half.X + 1, 0, 0), Index3.Zero, new Index3(extent.X - (half.X + 1), extent.Y, extent.Z));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, new Index3(half.X + 1, 0, 0), Index3.Zero, new Index3(extent.X - half.X, extent.Y, extent.Z)));
+            dst.<#= copyOperation #>(src, new Index3D(half.X, 0, 0), Index3D.Zero, new Index3D(extent.X - half.X, extent.Y, extent.Z));
+            dst.<#= copyOperation #>(src, new Index3D(half.X - 1, 0, 0), Index3D.Zero, new Index3D(extent.X - half.X, extent.Y, extent.Z));
+            dst.<#= copyOperation #>(src, new Index3D(half.X + 1, 0, 0), Index3D.Zero, new Index3D(extent.X - (half.X + 1), extent.Y, extent.Z));
 
-            dst.<#= copyOperation #>(src, new Index3(0, half.Y, 0), Index3.Zero, new Index3(extent.X, extent.Y - half.Y, extent.Z));
-            dst.<#= copyOperation #>(src, new Index3(0, half.Y - 1, 0), Index3.Zero, new Index3(extent.X, extent.Y - half.Y, extent.Z));
-            dst.<#= copyOperation #>(src, new Index3(0, half.Y + 1, 0), Index3.Zero, new Index3(extent.X, extent.Y - (half.Y + 1), extent.Z));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, new Index3(0, half.Y + 1, 0), Index3.Zero, new Index3(extent.X, extent.Y - half.Y, extent.Z)));
+            dst.<#= copyOperation #>(src, new Index3D(0, half.Y, 0), Index3D.Zero, new Index3D(extent.X, extent.Y - half.Y, extent.Z));
+            dst.<#= copyOperation #>(src, new Index3D(0, half.Y - 1, 0), Index3D.Zero, new Index3D(extent.X, extent.Y - half.Y, extent.Z));
+            dst.<#= copyOperation #>(src, new Index3D(0, half.Y + 1, 0), Index3D.Zero, new Index3D(extent.X, extent.Y - (half.Y + 1), extent.Z));
 
-            dst.<#= copyOperation #>(src, new Index3(0, 0, half.Z), Index3.Zero, new Index3(extent.X, extent.Y, extent.Z - half.Z));
-            dst.<#= copyOperation #>(src, new Index3(0, 0, half.Z - 1), Index3.Zero, new Index3(extent.X, extent.Y, extent.Z - half.Z));
-            dst.<#= copyOperation #>(src, new Index3(0, 0, half.Z + 1), Index3.Zero, new Index3(extent.X, extent.Y, extent.Z - (half.Z + 1)));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, new Index3(0, 0, half.Z + 1), Index3.Zero, new Index3(extent.X, extent.Y, extent.Z - half.Z)));
+            dst.<#= copyOperation #>(src, new Index3D(0, 0, half.Z), Index3D.Zero, new Index3D(extent.X, extent.Y, extent.Z - half.Z));
+            dst.<#= copyOperation #>(src, new Index3D(0, 0, half.Z - 1), Index3D.Zero, new Index3D(extent.X, extent.Y, extent.Z - half.Z));
+            dst.<#= copyOperation #>(src, new Index3D(0, 0, half.Z + 1), Index3D.Zero, new Index3D(extent.X, extent.Y, extent.Z - (half.Z + 1)));
 
-            dst.<#= copyOperation #>(src, Index3.Zero, new Index3(half.X, 0, 0),  new Index3(extent.X - half.X, extent.Y, extent.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, new Index3(half.X - 1, 0, 0), new Index3(extent.X - half.X, extent.Y, extent.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, new Index3(half.X + 1, 0, 0), new Index3(extent.X - (half.X + 1), extent.Y, extent.Z));
-            Assert.Throws<ArgumentOutOfRangeException>("extent", () =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(half.X + 1, 0, 0), new Index3(extent.X - half.X, extent.Y, extent.Z)));
+            dst.<#= copyOperation #>(src, Index3D.Zero, new Index3D(half.X, 0, 0),  new Index3D(extent.X - half.X, extent.Y, extent.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, new Index3D(half.X - 1, 0, 0), new Index3D(extent.X - half.X, extent.Y, extent.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, new Index3D(half.X + 1, 0, 0), new Index3D(extent.X - (half.X + 1), extent.Y, extent.Z));
 
-            dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, half.Y, 0), new Index3(extent.X, extent.Y - half.Y, extent.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, half.Y - 1, 0), new Index3(extent.X, extent.Y - half.Y, extent.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, half.Y + 1, 0), new Index3(extent.X, extent.Y - (half.Y + 1), extent.Z));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, half.Y + 1, 0), new Index3(extent.X, extent.Y - half.Y, extent.Z)));
+            dst.<#= copyOperation #>(src, Index3D.Zero, new Index3D(0, half.Y, 0), new Index3D(extent.X, extent.Y - half.Y, extent.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, new Index3D(0, half.Y - 1, 0), new Index3D(extent.X, extent.Y - half.Y, extent.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, new Index3D(0, half.Y + 1, 0), new Index3D(extent.X, extent.Y - (half.Y + 1), extent.Z));
 
-            dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, 0, half.Z), new Index3(extent.X, extent.Y, extent.Z - half.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, 0, half.Z - 1), new Index3(extent.X, extent.Y, extent.Z - half.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, 0, half.Z + 1), new Index3(extent.X, extent.Y, extent.Z - (half.Z + 1)));
-            Assert.ThrowsAny<Exception>(() =>
-                dst.<#= copyOperation #>(src, Index3.Zero, new Index3(0, 0, half.Z + 1), new Index3(extent.X, extent.Y, extent.Z - half.Z)));
+            dst.<#= copyOperation #>(src, Index3D.Zero, new Index3D(0, 0, half.Z), new Index3D(extent.X, extent.Y, extent.Z - half.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, new Index3D(0, 0, half.Z - 1), new Index3D(extent.X, extent.Y, extent.Z - half.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, new Index3D(0, 0, half.Z + 1), new Index3D(extent.X, extent.Y, extent.Z - (half.Z + 1)));
 
-            dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(extent.X - half.X, extent.Y, extent.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(extent.X - half.X - 1, extent.Y, extent.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(extent.X - half.X + 1, extent.Y, extent.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(extent.X, extent.Y - half.Y, extent.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(extent.X, extent.Y - half.Y - 1, extent.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(extent.X, extent.Y - half.Y + 1, extent.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(extent.X, extent.Y, extent.Z - half.Z));
-            dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(extent.X, extent.Y, extent.Z - half.Z - 1));
-            dst.<#= copyOperation #>(src, Index3.Zero, Index3.Zero, new Index3(extent.X, extent.Y, extent.Z - half.Z + 1));
+            dst.<#= copyOperation #>(src, Index3D.Zero, Index3D.Zero, new Index3D(extent.X - half.X, extent.Y, extent.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, Index3D.Zero, new Index3D(extent.X - half.X - 1, extent.Y, extent.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, Index3D.Zero, new Index3D(extent.X - half.X + 1, extent.Y, extent.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, Index3D.Zero, new Index3D(extent.X, extent.Y - half.Y, extent.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, Index3D.Zero, new Index3D(extent.X, extent.Y - half.Y - 1, extent.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, Index3D.Zero, new Index3D(extent.X, extent.Y - half.Y + 1, extent.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, Index3D.Zero, new Index3D(extent.X, extent.Y, extent.Z - half.Z));
+            dst.<#= copyOperation #>(src, Index3D.Zero, Index3D.Zero, new Index3D(extent.X, extent.Y, extent.Z - half.Z - 1));
+            dst.<#= copyOperation #>(src, Index3D.Zero, Index3D.Zero, new Index3D(extent.X, extent.Y, extent.Z - half.Z + 1));
         }
 
-<#
-        }
-    }
-#>
+<# } #>
     }
 }

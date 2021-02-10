@@ -378,7 +378,8 @@ namespace ILGPU.Frontend
             {
                 return;
             }
-            if (@namespace.StartsWith(
+            if (NotInsideKernelAttribute.IsDefined(method) ||
+                @namespace.StartsWith(
                 "System.Runtime",
                 StringComparison.OrdinalIgnoreCase) ||
                 @namespace.StartsWith(

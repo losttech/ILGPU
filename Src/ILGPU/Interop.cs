@@ -158,6 +158,7 @@ namespace ILGPU
         /// instances of type <typeparamref name="TSecond"/>.
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [NotInsideKernel]
         public static long ComputeRelativeSizeOf<TFirst, TSecond>(long numSecondElements)
             where TFirst : unmanaged
             where TSecond : unmanaged

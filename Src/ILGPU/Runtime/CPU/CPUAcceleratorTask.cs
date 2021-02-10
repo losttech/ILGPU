@@ -138,7 +138,7 @@ namespace ILGPU.Runtime.CPU
         /// <summary>
         /// Returns the grid dimension that was specified by the user.
         /// </summary>
-        public Index3 UserGridDim { get; }
+        public Index3D UserGridDim { get; }
 
         /// <summary>
         /// Returns the user-defined kernel dimension.
@@ -148,12 +148,12 @@ namespace ILGPU.Runtime.CPU
         /// <summary>
         /// Returns the current grid dimension.
         /// </summary>
-        public Index3 GridDim { get; }
+        public Index3D GridDim { get; }
 
         /// <summary>
         /// Returns the current group dimension.
         /// </summary>
-        public Index3 GroupDim { get; }
+        public Index3D GroupDim { get; }
 
         /// <summary>
         /// Returns the group dimension size.

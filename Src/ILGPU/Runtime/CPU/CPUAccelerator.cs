@@ -114,9 +114,9 @@ namespace ILGPU.Runtime.CPU
             DefaultStream = CreateStream();
             Name = nameof(CPUAccelerator);
             MemorySize = long.MaxValue;
-            MaxGridSize = new Index3(int.MaxValue, int.MaxValue, int.MaxValue);
+            MaxGridSize = new Index3D(int.MaxValue, int.MaxValue, int.MaxValue);
             MaxNumThreadsPerGroup = NumThreads;
-            MaxGroupSize = new Index3(
+            MaxGroupSize = new Index3D(
                 MaxNumThreadsPerGroup,
                 MaxNumThreadsPerGroup,
                 MaxNumThreadsPerGroup);
@@ -142,18 +142,17 @@ namespace ILGPU.Runtime.CPU
 
         #region Methods
 
-        /// <summary cref="Accelerator.CreateExtension{TExtension, TExtensionProvider}
-        /// (TExtensionProvider)"/>
+        /// <inheritdoc/>
         public override TExtension CreateExtension<
             TExtension,
             TExtensionProvider>(TExtensionProvider provider) =>
             provider.CreateCPUExtension(this);
 
-        /// <summary cref="Accelerator.AllocateInternal{T, TIndex}(TIndex)"/>
-        protected override MemoryBuffer<T, TIndex> AllocateInternal<
-            T,
-            TIndex>(TIndex extent) =>
-            new CPUMemoryBuffer<T, TIndex>(this, extent);
+        /// <inheritdoc/>
+        protected override MemoryBuffer AllocateRawInternal(
+            long length,
+            int elementSize) =>
+            CPUMemoryBuffer.Create(this, length, elementSize);
 
         /// <summary>
         /// Loads the given kernel.

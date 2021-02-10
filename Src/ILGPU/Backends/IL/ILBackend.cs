@@ -310,13 +310,13 @@ namespace ILGPU.Backends.IL
             emitter.Emit(LocalOperation.Store, task);
 
             // Store the grid and group dimension of the current task
-            var sourceGridDim = emitter.DeclareLocal(typeof(Index3));
+            var sourceGridDim = emitter.DeclareLocal(typeof(Index3D));
             emitter.Emit(LocalOperation.Load, task);
             emitter.EmitCall(typeof(CPUAcceleratorTask).GetProperty(
                 nameof(CPUAcceleratorTask.UserGridDim)).GetGetMethod(false));
             emitter.Emit(LocalOperation.Store, sourceGridDim);
 
-            var sourceGroupDim = emitter.DeclareLocal(typeof(Index3));
+            var sourceGroupDim = emitter.DeclareLocal(typeof(Index3D));
             emitter.Emit(LocalOperation.Load, task);
             emitter.EmitCall(typeof(CPUAcceleratorTask).GetProperty(
                 nameof(CPUAcceleratorTask.GroupDim)).GetGetMethod(false));

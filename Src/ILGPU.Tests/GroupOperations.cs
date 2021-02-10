@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using ILGPU.Runtime;
 using ILGPU.Runtime.Cuda;
 using ILGPU.Runtime.OpenCL;
 using System;
@@ -15,7 +16,7 @@ namespace ILGPU.Tests
             : base(output, testContext)
         { }
 
-        internal static void GroupDimensionKernel(ArrayView<int> data)
+        internal static void GroupDimensionKernel(ArrayView1D<int, Stride1D.Dense> data)
         {
             data[0] = Group.DimX;
             data[1] = Group.DimY;
@@ -31,10 +32,10 @@ namespace ILGPU.Tests
         {
             for (int i = 2; i <= Math.Min(8, Accelerator.MaxNumThreadsPerGroup); i <<= 1)
             {
-                using var buffer = Accelerator.Allocate<int>(3);
+                using var buffer = Accelerator.Allocate1D<int>(3);
                 var extent = new KernelConfig(
-                    new Index3(1, 1, 1),
-                    new Index3(
+                    new Index3D(1, 1, 1),
+                    new Index3D(
                         Math.Max(i * xMask, 1),
                         Math.Max(i * yMask, 1),
                         Math.Max(i * zMask, 1)));
@@ -47,7 +48,7 @@ namespace ILGPU.Tests
                     extent.GroupDim.Y,
                     extent.GroupDim.Z,
                 };
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
             }
         }
 
@@ -61,10 +62,10 @@ namespace ILGPU.Tests
             var end = (int)Math.Sqrt(Accelerator.MaxNumThreadsPerGroup);
             for (int i = 2; i <= end; i <<= 1)
             {
-                using var buffer = Accelerator.Allocate<int>(3);
+                using var buffer = Accelerator.Allocate1D<int>(3);
                 var extent = new KernelConfig(
-                    new Index3(1, 1, 1),
-                    new Index3(
+                    new Index3D(1, 1, 1),
+                    new Index3D(
                         Math.Max(i * xMask, 1),
                         Math.Max(i * yMask, 1),
                         Math.Max(i * zMask, 1)));
@@ -76,7 +77,7 @@ namespace ILGPU.Tests
                     extent.GroupDim.Y,
                     extent.GroupDim.Z,
                 };
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
             }
         }
 
@@ -87,10 +88,10 @@ namespace ILGPU.Tests
             var end = (int)Math.Pow(Accelerator.MaxNumThreadsPerGroup, 1.0 / 3.0);
             for (int i = 1; i <= end; i <<= 1)
             {
-                using var buffer = Accelerator.Allocate<int>(3);
+                using var buffer = Accelerator.Allocate1D<int>(3);
                 var extent = new KernelConfig(
-                    new Index3(1, 1, 1),
-                    new Index3(i, i, i));
+                    new Index3D(1, 1, 1),
+                    new Index3D(i, i, i));
                 Execute(extent, buffer.View);
 
                 var expected = new int[]
@@ -99,11 +100,11 @@ namespace ILGPU.Tests
                     extent.GroupDim.Y,
                     extent.GroupDim.Z,
                 };
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
             }
         }
 
-        internal static void GroupBarrierKernel(ArrayView<int> data)
+        internal static void GroupBarrierKernel(ArrayView1D<int, Stride1D.Dense> data)
         {
             var idx = Grid.IdxX * Group.DimX + Group.IdxX;
             Group.Barrier();
@@ -119,20 +120,20 @@ namespace ILGPU.Tests
         {
             for (int i = 1; i <= Accelerator.MaxNumThreadsPerGroup; i <<= 1)
             {
-                using var buffer = Accelerator.Allocate<int>(length * i);
+                using var buffer = Accelerator.Allocate1D<int>(length * i);
                 var extent = new KernelConfig(
                     length,
                     i);
                 Execute(extent, buffer.View);
 
                 var expected = Enumerable.Range(0, length * i).ToArray();
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
             }
         }
 
         internal static void GroupBarrierAndKernel(
-            ArrayView<int> data,
-            Index1 bound)
+            ArrayView1D<int, Stride1D.Dense> data,
+            Index1D bound)
         {
             var idx = Grid.IdxX * Group.DimX + Group.IdxX;
             data[idx] = Group.BarrierAnd(Group.IdxX < bound) ? 1 : 0;
@@ -147,23 +148,23 @@ namespace ILGPU.Tests
         {
             for (int i = 2; i <= Accelerator.MaxNumThreadsPerGroup; i <<= 1)
             {
-                using var buffer = Accelerator.Allocate<int>(length * i);
+                using var buffer = Accelerator.Allocate1D<int>(length * i);
                 var extent = new KernelConfig(length, i);
-                Execute(extent, buffer.View, new Index1(i));
+                Execute(extent, buffer.View, new Index1D(i));
 
                 var expected = Enumerable.Repeat(1, (int)buffer.Length).ToArray();
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
 
-                Execute(extent, buffer.View, new Index1(i - 1));
+                Execute(extent, buffer.View, new Index1D(i - 1));
 
                 expected = Enumerable.Repeat(0, (int)buffer.Length).ToArray();
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
             }
         }
 
         internal static void GroupBarrierOrKernel(
-            ArrayView<int> data,
-            Index1 bound)
+            ArrayView1D<int, Stride1D.Dense> data,
+            Index1D bound)
         {
             var idx = Grid.IdxX * Group.DimX + Group.IdxX;
             data[idx] = Group.BarrierOr(Group.IdxX < bound) ? 1 : 0;
@@ -178,24 +179,24 @@ namespace ILGPU.Tests
         {
             for (int i = 2; i <= Accelerator.MaxNumThreadsPerGroup; i <<= 1)
             {
-                using var buffer = Accelerator.Allocate<int>(length * i);
+                using var buffer = Accelerator.Allocate1D<int>(length * i);
                 var extent = new KernelConfig(length, i);
-                Execute(extent, buffer.View, new Index1(1));
+                Execute(extent, buffer.View, new Index1D(1));
 
                 var expected = Enumerable.Repeat(1, (int)buffer.Length).ToArray();
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
 
-                Execute(extent, buffer.View, new Index1(0));
+                Execute(extent, buffer.View, new Index1D(0));
 
                 expected = Enumerable.Repeat(0, (int)buffer.Length).ToArray();
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
             }
         }
 
         internal static void GroupBarrierPopCountKernel(
-            ArrayView<int> data,
-            ArrayView<int> data2,
-            Index1 bound)
+            ArrayView1D<int, Stride1D.Dense> data,
+            ArrayView1D<int, Stride1D.Dense> data2,
+            Index1D bound)
         {
             var idx = Grid.IdxX * Group.DimX + Group.IdxX;
             data[idx] = Group.BarrierPopCount(Group.IdxX < bound);
@@ -211,16 +212,16 @@ namespace ILGPU.Tests
         {
             for (int i = 2; i <= Accelerator.MaxNumThreadsPerGroup; i <<= 1)
             {
-                using var buffer = Accelerator.Allocate<int>(length * i);
-                using var buffer2 = Accelerator.Allocate<int>(length * i);
+                using var buffer = Accelerator.Allocate1D<int>(length * i);
+                using var buffer2 = Accelerator.Allocate1D<int>(length * i);
                 var extent = new KernelConfig(length, i);
-                Execute(extent, buffer.View, buffer2.View, new Index1(i));
+                Execute(extent, buffer.View, buffer2.View, new Index1D(i));
 
                 var expected = Enumerable.Repeat(i, (int)buffer.Length).ToArray();
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
 
                 var expected2 = Enumerable.Repeat(0, (int)buffer.Length).ToArray();
-                Verify(buffer2, expected2);
+                Verify(buffer2.View, expected2);
             }
         }
 
@@ -244,7 +245,8 @@ namespace ILGPU.Tests
                 x is NotSupportedException);
         }
 
-        internal static void GroupBroadcastKernel(ArrayView<int> data)
+        internal static void GroupBroadcastKernel(
+            ArrayView1D<int, Stride1D.Dense> data)
         {
             var idx = Grid.IdxX * Group.DimX + Group.IdxX;
             data[idx] = Group.Broadcast(Group.IdxX, Group.DimX - 1);
@@ -259,16 +261,17 @@ namespace ILGPU.Tests
         {
             for (int i = 2; i <= Accelerator.MaxNumThreadsPerGroup; i <<= 1)
             {
-                using var buffer = Accelerator.Allocate<int>(length * i);
+                using var buffer = Accelerator.Allocate1D<int>(length * i);
                 var extent = new KernelConfig(length, i);
                 Execute(extent, buffer.View);
 
                 var expected = Enumerable.Repeat(i - 1, (int)buffer.Length).ToArray();
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
             }
         }
 
-        internal static void GroupDivergentControlFlowKernel(ArrayView<int> data)
+        internal static void GroupDivergentControlFlowKernel(
+            ArrayView1D<int, Stride1D.Dense> data)
         {
             var idx = Grid.IdxX * Group.DimX + Group.IdxX;
 
@@ -300,7 +303,7 @@ namespace ILGPU.Tests
             //
             for (int i = 2; i <= Accelerator.WarpSize; i <<= 1)
             {
-                using var buffer = Accelerator.Allocate<int>(length * i);
+                using var buffer = Accelerator.Allocate1D<int>(length * i);
                 buffer.MemSetToZero();
                 Accelerator.Synchronize();
 
@@ -309,7 +312,7 @@ namespace ILGPU.Tests
 
                 var expected = Enumerable.Repeat(Enumerable.Range(0, i), length)
                     .SelectMany(x => x).ToArray();
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
             }
         }
     }

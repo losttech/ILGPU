@@ -28,18 +28,18 @@ namespace ILGPU.Runtime
 
         /// <summary>
         /// Stores all getter methods to resolve all index values of an
-        /// <see cref="Index3"/>.
+        /// <see cref="Index3D"/>.
         /// </summary>
         private static readonly MethodInfo[] Index3ValueGetter =
         {
-            typeof(Index3).GetProperty(
-                nameof(Index3.X),
+            typeof(Index3D).GetProperty(
+                nameof(Index3D.X),
                 BindingFlags.Public | BindingFlags.Instance).GetGetMethod(false),
-            typeof(Index3).GetProperty(
-                nameof(Index3.Y),
+            typeof(Index3D).GetProperty(
+                nameof(Index3D.Y),
                 BindingFlags.Public | BindingFlags.Instance).GetGetMethod(false),
-            typeof(Index3).GetProperty(
-                nameof(Index3.Z),
+            typeof(Index3D).GetProperty(
+                nameof(Index3D.Z),
                 BindingFlags.Public | BindingFlags.Instance).GetGetMethod(false),
         };
 
@@ -47,20 +47,20 @@ namespace ILGPU.Runtime
         /// Resolves the main constructor of the given index type.
         /// </summary>
         /// <param name="indexType">
-        /// The index type (can be Index, Index2 or Index3).
+        /// The index type (can be Index1D, Index2D or Index3D).
         /// </param>
         /// <returns>The main constructor.</returns>
         private static ConstructorInfo GetMainIndexConstructor(Type indexType) =>
             (ConstructorInfo)indexType.GetField(
-                nameof(Index1.MainConstructor),
+                nameof(Index1D.MainConstructor),
                 BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
 
         /// <summary>
-        /// Emits code to convert an Index3 to a specific target type.
+        /// Emits code to convert an Index3D to a specific target type.
         /// </summary>
         /// <typeparam name="TEmitter">The emitter type.</typeparam>
         /// <param name="indexType">
-        /// The index type (can be Index, Index2 or Index3).
+        /// The index type (can be Index1D, Index2D or Index3D).
         /// </param>
         /// <param name="emitter">The target IL emitter.</param>
         /// <param name="loadIdx">
@@ -79,7 +79,7 @@ namespace ILGPU.Runtime
                     RuntimeErrorMessages.NotSupportedIndexType);
             }
 
-            var idxLocal = emitter.DeclareLocal(typeof(Index3));
+            var idxLocal = emitter.DeclareLocal(typeof(Index3D));
             for (int i = 0; i < numValues; ++i)
             {
                 loadIdx();
@@ -94,16 +94,16 @@ namespace ILGPU.Runtime
         }
 
         private static readonly Type[] ReconstructIndex2DArguments =
-            new Type[] { typeof(int), typeof(Index2) };
+            new Type[] { typeof(int), typeof(Index2D) };
         private static readonly Type[] ReconstructIndex3DArguments =
-            new Type[] { typeof(int), typeof(Index3) };
+            new Type[] { typeof(int), typeof(Index3D) };
 
         /// <summary>
         /// Emits code to convert a linear index to a specific target type.
         /// </summary>
         /// <typeparam name="TEmitter">The emitter type.</typeparam>
         /// <param name="indexType">
-        /// The index type (can be Index, Index2 or Index3).
+        /// The index type (can be Index1D, Index2D or Index3D).
         /// </param>
         /// <param name="emitter">The target IL emitter.</param>
         /// <param name="loadDimension">
@@ -127,14 +127,14 @@ namespace ILGPU.Runtime
                     loadDimension();
                     emitter.EmitCall(
                         managedIndexType.GetMethod(
-                            nameof(Index2.ReconstructIndex),
+                            nameof(Index2D.ReconstructIndex),
                             ReconstructIndex2DArguments));
                     break;
                 case IndexType.Index3D:
                     loadDimension();
                     emitter.EmitCall(
                         managedIndexType.GetMethod(
-                            nameof(Index3.ReconstructIndex),
+                            nameof(Index3D.ReconstructIndex),
                             ReconstructIndex3DArguments));
                     break;
                 default:
@@ -148,7 +148,7 @@ namespace ILGPU.Runtime
         /// </summary>
         /// <typeparam name="TEmitter">The emitter type.</typeparam>
         /// <param name="indexType">
-        /// The index type (can be Index, Index2 or Index3).
+        /// The index type (can be Index1D, Index2D or Index3D).
         /// </param>
         /// <param name="emitter">The target IL emitter.</param>
         /// <param name="loadIdx">
@@ -166,7 +166,7 @@ namespace ILGPU.Runtime
         /// </summary>
         /// <typeparam name="TEmitter">The emitter type.</typeparam>
         /// <param name="indexType">
-        /// The index type (can be Index, Index2 or Index3).
+        /// The index type (can be Index1D, Index2D or Index3D).
         /// </param>
         /// <param name="emitter">The target IL emitter.</param>
         /// <param name="loadIdx">
@@ -185,13 +185,13 @@ namespace ILGPU.Runtime
             var indexFieldGetter = new MethodInfo[]
             {
                 indexType.GetProperty(
-                    nameof(Index3.X),
+                    nameof(Index3D.X),
                     BindingFlags.Public | BindingFlags.Instance)?.GetGetMethod(false),
                 indexType.GetProperty(
-                    nameof(Index3.Y),
+                    nameof(Index3D.Y),
                     BindingFlags.Public | BindingFlags.Instance)?.GetGetMethod(false),
                 indexType.GetProperty(
-                    nameof(Index3.Z),
+                    nameof(Index3D.Z),
                     BindingFlags.Public | BindingFlags.Instance)?.GetGetMethod(false),
             };
 

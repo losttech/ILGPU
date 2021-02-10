@@ -16,6 +16,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using ByteMemoryBuffer = ILGPU.Runtime.MemoryBuffer<
+    ILGPU.Runtime.ArrayView1D<byte, ILGPU.Stride1D.Dense>>;
 
 namespace ILGPU.Runtime.CPU
 {
@@ -83,7 +85,7 @@ namespace ILGPU.Runtime.CPU
         /// <summary>
         /// A temporary location for broadcast values.
         /// </summary>
-        private readonly MemoryBuffer<byte> broadcastBuffer;
+        private readonly ByteMemoryBuffer broadcastBuffer;
 
         /// <summary>
         /// The current shared memory offset for allocation.
@@ -122,8 +124,8 @@ namespace ILGPU.Runtime.CPU
         /// <see cref="SharedMemory.Allocate{T}(int)"/> instructions out of nested loops
         /// to provide the best debugging experience.
         /// </remarks>
-        private readonly List<MemoryBuffer<byte>> advancedSharedMemoryBuffer =
-            new List<MemoryBuffer<byte>>();
+        private readonly List<ByteMemoryBuffer> advancedSharedMemoryBuffer =
+            new List<ByteMemoryBuffer>();
 
         /// <summary>
         /// Represents the next advanced shared-memory buffer index to use.
@@ -140,7 +142,7 @@ namespace ILGPU.Runtime.CPU
             Accelerator = accelerator;
             groupBarrier = new Barrier(0);
             sharedMemoryBuffer = new MemoryBufferCache(accelerator);
-            broadcastBuffer = accelerator.Allocate<byte>(BroadcastBufferSize);
+            broadcastBuffer = accelerator.Allocate1D<byte>(BroadcastBufferSize);
         }
 
         #endregion
@@ -174,7 +176,7 @@ namespace ILGPU.Runtime.CPU
                 // We can allocate the required memory
                 if (sharedMemoryOffset + sizeInBytes <= SharedMemory.Length)
                 {
-                    currentSharedMemoryView = SharedMemory.GetSubView(
+                    currentSharedMemoryView = SharedMemory.SubView(
                         sharedMemoryOffset,
                         sizeInBytes);
                     sharedMemoryOffset += sizeInBytes;
@@ -190,7 +192,7 @@ namespace ILGPU.Runtime.CPU
                 var buffer = advancedSharedMemoryBuffer[advancedSharedMemoryBufferIndex];
                 if (sharedMemoryOffset + sizeInBytes <= buffer.Length)
                 {
-                    currentSharedMemoryView = buffer.View.GetSubView(
+                    currentSharedMemoryView = buffer.View.SubView(
                         sharedMemoryOffset,
                         sizeInBytes);
                     sharedMemoryOffset += sizeInBytes;
@@ -200,10 +202,10 @@ namespace ILGPU.Runtime.CPU
             }
 
             // We need a new dynamically-chunk of shared memory
-            var tempBuffer = Accelerator.Allocate<byte>(
+            var tempBuffer = Accelerator.Allocate1D<byte>(
                 IntrinsicMath.Max(sizeInBytes, SharedMemoryChunkSize));
             advancedSharedMemoryBuffer.Add(tempBuffer);
-            currentSharedMemoryView = tempBuffer.View.GetSubView(0, sizeInBytes);
+            currentSharedMemoryView = tempBuffer.View.SubView(0, sizeInBytes);
 
             sharedMemoryOffset = sizeInBytes;
             ++advancedSharedMemoryBufferIndex;
@@ -339,7 +341,7 @@ namespace ILGPU.Runtime.CPU
         /// </param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void Initialize(
-            Index3 groupDimension,
+            Index3D groupDimension,
             in RuntimeSharedMemoryConfig sharedMemoryConfig)
         {
             sharedMemoryOffset = 0;

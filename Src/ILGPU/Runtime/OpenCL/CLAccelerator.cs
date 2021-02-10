@@ -267,7 +267,7 @@ namespace ILGPU.Runtime.OpenCL
                 DeviceId,
                 CLDeviceInfoType.CL_DEVICE_MAX_WORK_ITEM_SIZES,
                 workItemSizes);
-            MaxGridSize = new Index3(
+            MaxGridSize = new Index3D(
                 workItemSizes[0].ToInt32(),
                 workItemSizes[1].ToInt32(),
                 workItemSizes[2].ToInt32());
@@ -276,7 +276,7 @@ namespace ILGPU.Runtime.OpenCL
             MaxNumThreadsPerGroup = CurrentAPI.GetDeviceInfo<IntPtr>(
                 DeviceId,
                 CLDeviceInfoType.CL_DEVICE_MAX_WORK_GROUP_SIZE).ToInt32();
-            MaxGroupSize = new Index3(
+            MaxGroupSize = new Index3D(
                 MaxNumThreadsPerGroup,
                 MaxNumThreadsPerGroup,
                 MaxNumThreadsPerGroup);
@@ -553,19 +553,18 @@ namespace ILGPU.Runtime.OpenCL
             writer.WriteLine(Capabilities.SubGroups);
         }
 
-        /// <summary cref="Accelerator.CreateExtension{TExtension, TExtensionProvider}(
-        /// TExtensionProvider)"/>
+        /// <inheritdoc/>
         public override TExtension CreateExtension<TExtension, TExtensionProvider>(
             TExtensionProvider provider) =>
             provider.CreateOpenCLExtension(this);
 
-        /// <summary cref="Accelerator.AllocateInternal{T, TIndex}(TIndex)"/>
-        protected override MemoryBuffer<T, TIndex> AllocateInternal<T, TIndex>(
-            TIndex extent) =>
-            new CLMemoryBuffer<T, TIndex>(this, extent);
+        /// <inheritdoc/>
+        protected override MemoryBuffer AllocateRawInternal(
+            long length,
+            int elementSize) =>
+            new CLMemoryBuffer(this, length, elementSize);
 
-        /// <summary cref="KernelAccelerator{TCompiledKernel, TKernel}.CreateKernel(
-        /// TCompiledKernel)"/>
+        /// <inheritdoc/>
         protected override CLKernel CreateKernel(CLCompiledKernel compiledKernel)
         {
             // Verify OpenCL C version
@@ -580,14 +579,13 @@ namespace ILGPU.Runtime.OpenCL
             return new CLKernel(this, compiledKernel, null);
         }
 
-        /// <summary cref="KernelAccelerator{TCompiledKernel, TKernel}.CreateKernel(
-        /// TCompiledKernel, MethodInfo)"/>
+        /// <inheritdoc/>
         protected override CLKernel CreateKernel(
             CLCompiledKernel compiledKernel,
             MethodInfo launcher) =>
             new CLKernel(this, compiledKernel, launcher);
 
-        /// <summary cref="Accelerator.CreateStream()"/>
+        /// <inheritdoc/>
         protected override AcceleratorStream CreateStreamInternal() =>
             new CLStream(this);
 

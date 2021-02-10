@@ -13,7 +13,8 @@ namespace ILGPU.Tests
             : base(output, testContext)
         { }
 
-        internal static void GridDimensionKernel(ArrayView<int> data)
+        internal static void GridDimensionKernel(
+            ArrayView1D<int, Stride1D.Dense> data)
         {
             data[0] = Grid.DimX;
             data[1] = Grid.DimY;
@@ -33,13 +34,13 @@ namespace ILGPU.Tests
         {
             for (int i = 2; i <= Accelerator.MaxNumThreadsPerGroup; i <<= 1)
             {
-                using var buffer = Accelerator.Allocate<int>(3);
+                using var buffer = Accelerator.Allocate1D<int>(3);
                 var extent = new KernelConfig(
-                    new Index3(
+                    new Index3D(
                         Math.Max(i * xMask, 1),
                         Math.Max(i * yMask, 1),
                         Math.Max(i * zMask, 1)),
-                    Index3.One);
+                    Index3D.One);
 
                 Execute(extent, buffer.View);
 
@@ -49,11 +50,12 @@ namespace ILGPU.Tests
                     extent.GridDim.Y,
                     extent.GridDim.Z,
                 };
-                Verify(buffer, expected);
+                Verify(buffer.View, expected);
             }
         }
 
-        internal static void GridLaunchDimensionKernel(ArrayView<int> data)
+        internal static void GridLaunchDimensionKernel(
+            ArrayView1D<int, Stride1D.Dense> data)
         {
             data[0] = Grid.DimX;
         }
@@ -64,14 +66,14 @@ namespace ILGPU.Tests
         [Fact]
         public void GridLaunchDimension()
         {
-            using var buffer = Accelerator.Allocate<int>(1);
-            var kernel = Accelerator.LoadStreamKernel<ArrayView<int>>
+            using var buffer = Accelerator.Allocate1D<int>(1);
+            var kernel = Accelerator.LoadStreamKernel<ArrayView1D<int, Stride1D.Dense>>
                 (GridLaunchDimensionKernel);
 
             kernel((1, 2), buffer.View);
             Accelerator.Synchronize();
 
-            var data = buffer.GetAsArray();
+            var data = buffer.GetAs1DArray();
             int expected = 1;
 
             Assert.Equal(expected, data[0]);

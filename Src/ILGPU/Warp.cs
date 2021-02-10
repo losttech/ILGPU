@@ -27,7 +27,6 @@ namespace ILGPU
         /// <summary>
         /// Returns the warp size.
         /// </summary>
-        [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         public static int WarpSize
         {
             [WarpIntrinsic(WarpIntrinsicKind.WarpSize)]
@@ -37,7 +36,6 @@ namespace ILGPU
         /// <summary>
         /// Returns the current lane index [0, WarpSize - 1].
         /// </summary>
-        [SuppressMessage("Microsoft.Design", "CA1024:UsePropertiesWhereAppropriate")]
         public static int LaneIdx
         {
             [WarpIntrinsic(WarpIntrinsicKind.LaneIdx)]
@@ -70,7 +68,7 @@ namespace ILGPU
         /// The current warp index in the range [0, NumUsedWarps - 1].
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ComputeWarpIdx(Index1 groupThreadIdx) =>
+        public static int ComputeWarpIdx(Index1D groupThreadIdx) =>
             groupThreadIdx / WarpSize;
 
         /// <summary>
@@ -83,7 +81,7 @@ namespace ILGPU
         /// The current warp thread index in the range [0, WarpSize - 1].
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int ComputeWarpThreadIdx(Index1 groupThreadIdx) =>
+        public static int ComputeWarpThreadIdx(Index1D groupThreadIdx) =>
             groupThreadIdx % WarpSize;
 
         #endregion

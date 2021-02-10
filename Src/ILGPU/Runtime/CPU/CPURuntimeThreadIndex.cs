@@ -23,7 +23,7 @@ namespace ILGPU.Runtime.CPU
         #region Fields
 
         /// <summary>
-        /// Represents the <see cref="SetupIndices(Index3, Index3)"/> method.
+        /// Represents the <see cref="SetupIndices(Index3D, Index3D)"/> method.
         /// </summary>
         internal static MethodInfo SetupIndicesMethod =
             typeof(CPURuntimeThreadContext).GetMethod(
@@ -39,28 +39,28 @@ namespace ILGPU.Runtime.CPU
         /// of the debug CPU accelerator.
         /// </summary>
         [ThreadStatic]
-        private static Index3 gridIndexValue;
+        private static Index3D gridIndexValue;
 
         /// <summary>
         /// The group index within the scheduled thread grid
         /// of the debug CPU accelerator.
         /// </summary>
         [ThreadStatic]
-        private static Index3 groupIndexValue;
+        private static Index3D groupIndexValue;
 
         /// <summary>
         /// The grid dimension within the scheduled thread grid
         /// of the debug CPU accelerator.
         /// </summary>
         [ThreadStatic]
-        private static Index3 gridDimensionValue;
+        private static Index3D gridDimensionValue;
 
         /// <summary>
         /// The group dimension within the scheduled thread grid
         /// of the debug CPU accelerator.
         /// </summary>
         [ThreadStatic]
-        private static Index3 groupDimensionValue;
+        private static Index3D groupDimensionValue;
 
         #endregion
 
@@ -69,22 +69,22 @@ namespace ILGPU.Runtime.CPU
         /// <summary>
         /// Returns the grid index within the scheduled thread grid.
         /// </summary>
-        public static Index3 GridIndex => gridIndexValue;
+        public static Index3D GridIndex => gridIndexValue;
 
         /// <summary>
         /// Returns the group index within the scheduled thread grid.
         /// </summary>
-        public static Index3 GroupIndex => groupIndexValue;
+        public static Index3D GroupIndex => groupIndexValue;
 
         /// <summary>
         /// Returns the group dimension of the scheduled thread grid.
         /// </summary>
-        public static Index3 GridDimension => gridDimensionValue;
+        public static Index3D GridDimension => gridDimensionValue;
 
         /// <summary>
         /// Returns the group dimension of the scheduled thread grid.
         /// </summary>
-        public static Index3 GroupDimension => groupDimensionValue;
+        public static Index3D GroupDimension => groupDimensionValue;
 
         /// <summary>
         /// Returns the current total group size in number of threads.
@@ -101,7 +101,7 @@ namespace ILGPU.Runtime.CPU
         /// <param name="gridIndex">The grid index.</param>
         /// <param name="groupIndex">The group index.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void SetupIndices(Index3 gridIndex, Index3 groupIndex)
+        internal static void SetupIndices(Index3D gridIndex, Index3D groupIndex)
         {
             gridIndexValue = gridIndex;
             groupIndexValue = groupIndex;
@@ -115,8 +115,8 @@ namespace ILGPU.Runtime.CPU
         /// <param name="groupDimension">The group dimension.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void SetupDimensions(
-            Index3 gridDimension,
-            Index3 groupDimension)
+            Index3D gridDimension,
+            Index3D groupDimension)
         {
             SetupIndices(default, default);
             gridDimensionValue = gridDimension;
