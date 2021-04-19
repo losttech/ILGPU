@@ -267,10 +267,12 @@ namespace ILGPU.Frontend
             for (int i = parameters.Length - 1; i >= 0; --i)
             {
                 var param = parameters[i];
-                var argument = Pop(
-                    Builder.CreateType(param.ParameterType),
-                    param.ParameterType.IsUnsignedInt() ?
-                        ConvertFlags.TargetUnsigned : ConvertFlags.None);
+                var argument = typeof(Delegate).IsAssignableFrom(param.ParameterType)
+                    ? Pop()
+                    : Pop(
+                        Builder.CreateType(param.ParameterType),
+                        param.ParameterType.IsUnsignedInt() ?
+                            ConvertFlags.TargetUnsigned : ConvertFlags.None);
                 result.Add(argument);
             }
 
@@ -279,16 +281,25 @@ namespace ILGPU.Frontend
             {
                 if (instanceValue == null)
                 {
-                    var declaringType = Builder.CreateType(methodBase.DeclaringType);
-                    if (!Intrinsics.IsIntrinsicArrayType(methodBase.DeclaringType))
+                    switch (PeekType(location))
                     {
-                        declaringType = Builder.CreatePointerType(
-                            declaringType,
-                            MemoryAddressSpace.Generic);
+                        case NullType _:
+                        case HandleType _:
+                            instanceValue = Pop();
+                            break;
+                        default:
+                            var declaringType = Builder.CreateType(methodBase.DeclaringType);
+                            if (!Intrinsics.IsIntrinsicArrayType(methodBase.DeclaringType))
+                            {
+                                declaringType = Builder.CreatePointerType(
+                                    declaringType,
+                                    MemoryAddressSpace.Generic);
+                            }
+                            instanceValue = Pop(
+                                declaringType,
+                                ConvertFlags.None);
+                            break;
                     }
-                    instanceValue = Pop(
-                        declaringType,
-                        ConvertFlags.None);
                 }
                 else
                 {

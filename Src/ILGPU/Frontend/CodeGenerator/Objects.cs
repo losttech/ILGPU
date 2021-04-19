@@ -61,6 +61,17 @@ namespace ILGPU.Frontend
                 throw Location.GetInvalidOperationException();
 
             var type = constructor.DeclaringType;
+            if (typeof(Delegate).IsAssignableFrom(type))
+            {
+                var func = Block.Pop();
+                var instancePtr = Block.Pop();
+                if (!(instancePtr is NullValue))
+                    throw Location.GetNotSupportedException("Only delegates pointing to static methods are supported");
+
+                Block.Push(func);
+                return;
+            }
+
             var typeNode = Builder.CreateType(type);
             var alloca = CreateTempAlloca(typeNode);
 

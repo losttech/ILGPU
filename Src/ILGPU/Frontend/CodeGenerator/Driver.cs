@@ -41,6 +41,7 @@ namespace ILGPU.Frontend
                     MakeTrap();
                     return true;
                 case ILInstructionType.LdToken:
+                case ILInstructionType.LdFn:
                     MakeLoadToken(instruction.Argument);
                     return true;
 
@@ -103,6 +104,9 @@ namespace ILGPU.Frontend
                             VariableRefType.Local));
                     return true;
 
+                case ILInstructionType.Ldnull:
+                    LoadNull();
+                    return true;
                 case ILInstructionType.LdI4:
                     Load(instruction.GetArgumentAs<int>());
                     return true;

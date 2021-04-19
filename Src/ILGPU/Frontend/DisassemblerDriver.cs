@@ -682,6 +682,9 @@ namespace ILGPU.Frontend
                 case ILOpCode.Ldtoken:
                     AppendInstruction(ILInstructionType.LdToken, 0, 1, AssociatedModule.ResolveMember(ReadIntArg(), TypeGenericArguments, MethodGenericArguments));
                     return true;
+                case ILOpCode.Ldftn:
+                    AppendInstruction(ILInstructionType.LdFn, 0, 1, AssociatedModule.ResolveMethod(ReadIntArg(), TypeGenericArguments, MethodGenericArguments));
+                    return true;
 
                 default:
                     return false;

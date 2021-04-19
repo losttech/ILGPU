@@ -178,4 +178,46 @@ namespace ILGPU.IR.Types
 
         #endregion
     }
+
+    /// <summary>
+    /// Represents the type of <c>null</c> constant.
+    /// </summary>
+    public sealed class NullType : TypeNode
+    {
+        #region Instance
+
+        /// <summary>
+        /// Constructs a new null type.
+        /// </summary>
+        /// <param name="typeContext">The parent type context.</param>
+        internal NullType(IRTypeContext typeContext)
+            : base(typeContext)
+        { }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Returns the corresponding managed basic value type.
+        /// </summary>
+        protected override Type GetManagedType() => typeof(object);
+
+        #endregion
+
+        #region Object
+
+        /// <summary cref="Node.ToPrefixString"/>
+        protected override string ToPrefixString() => "null";
+
+        /// <summary cref="TypeNode.GetHashCode"/>
+        public override int GetHashCode() =>
+            base.GetHashCode() ^ 0xAC4E55A;
+
+        /// <summary cref="TypeNode.Equals(object)"/>
+        public override bool Equals(object obj) =>
+            obj is NullType && base.Equals(obj);
+
+        #endregion
+    }
 }

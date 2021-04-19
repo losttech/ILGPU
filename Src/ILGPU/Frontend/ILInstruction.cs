@@ -341,6 +341,10 @@ namespace ILGPU.Frontend
         /// <summary>LoadToken</summary>
         ///
         LdToken,
+        ///
+        /// <summary>LoadFunction</summary>
+        ///
+        LdFn,
     }
 
     /// <summary>

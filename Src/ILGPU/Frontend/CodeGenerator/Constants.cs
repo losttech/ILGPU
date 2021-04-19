@@ -47,5 +47,11 @@ namespace ILGPU.Frontend
         /// <param name="value">The value.</param>
         private void LoadString(string value) =>
             Block.Push(Builder.CreatePrimitiveValue(Location, value));
+
+        /// <summary>
+        /// Loads <c>null</c>.
+        /// </summary>
+        private void LoadNull()
+            => Block.Push(Builder.CreateNull(Location, Context.NullType));
     }
 }

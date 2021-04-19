@@ -27,7 +27,7 @@ namespace ILGPU.Util
         /// A parameter offset of 1 for instance methods and 0 for static methods.
         /// </returns>
         public static int GetParameterOffset(this MethodBase method) =>
-            method.IsStatic || method.IsNotCapturingLambda() ? 0 : 1;
+            method.IsStatic ? 0 : 1;
 
         /// <summary>
         /// Returns true if the method can be considered a non-capturing lambda.

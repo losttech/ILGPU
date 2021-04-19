@@ -27,6 +27,11 @@ namespace ILGPU.IR
         public StringType StringType => TypeContext.StringType;
 
         /// <summary>
+        /// Returns the type of <c>null</c> constant.
+        /// </summary>
+        public NullType NullType => TypeContext.NullType;
+
+        /// <summary>
         /// Returns the runtime handle type.
         /// </summary>
         public HandleType HandleType => TypeContext.HandleType;

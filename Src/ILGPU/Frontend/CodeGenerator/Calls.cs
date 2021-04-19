@@ -93,7 +93,7 @@ namespace ILGPU.Frontend
             const BindingFlags ConstraintMethodFlags = BindingFlags.Instance |
                 BindingFlags.Public | BindingFlags.NonPublic;
 
-            if (!target.IsVirtual)
+            if (!target.IsVirtual || target.DeclaringType.IsSealed)
                 return target;
             if (constrainedType == null)
             {

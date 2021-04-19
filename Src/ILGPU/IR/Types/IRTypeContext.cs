@@ -82,6 +82,7 @@ namespace ILGPU.IR.Types
 
             VoidType = new VoidType(this);
             StringType = new StringType(this);
+            NullType = new NullType(this);
             HandleType = new HandleType(this);
 
             var rootTypeBuilder = CreateStructureType(0);
@@ -134,6 +135,11 @@ namespace ILGPU.IR.Types
         /// Returns the memory type.
         /// </summary>
         public StringType StringType { get; }
+
+        /// <summary>
+        /// Returns the type of <c>null</c> constant.
+        /// </summary>
+        public NullType NullType { get; }
 
         /// <summary>
         /// Returns the managed handle type.

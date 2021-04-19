@@ -79,7 +79,6 @@ namespace ILGPU.Frontend
         private void SetupVariables()
         {
             var builder = EntryBlock.Builder;
-            LambdaArgumentOffset = Method.IsNotCapturingLambda() ? 1 : 0;
 
             // Check for SSA variables
             for (int i = 0, e = DisassembledMethod.Count; i < e; ++i)
@@ -89,7 +88,7 @@ namespace ILGPU.Frontend
                 {
                     case ILInstructionType.Ldarga:
                         variables.Add(new VariableRef(
-                            instruction.GetArgumentAs<int>() - LambdaArgumentOffset,
+                            instruction.GetArgumentAs<int>(),
                             VariableRefType.Argument));
                         break;
                     case ILInstructionType.Ldloca:
@@ -101,12 +100,13 @@ namespace ILGPU.Frontend
             }
 
             // Initialize params
-            if (!Method.IsStatic && !Method.IsNotCapturingLambda())
+            if (!Method.IsStatic)
             {
-                var declaringType = builder.CreateType(Method.DeclaringType);
-                declaringType = builder.CreatePointerType(
-                    declaringType,
-                    MemoryAddressSpace.Generic);
+                var declaringType = Method.DeclaringType.IsValueType
+                    ? builder.CreatePointerType(
+                        builder.CreateType(Method.DeclaringType),
+                        MemoryAddressSpace.Generic)
+                    : (TypeNode)Context.NullType;
                 var paramRef = new VariableRef(0, VariableRefType.Argument);
                 EntryBlock.SetValue(
                     paramRef,
@@ -119,7 +119,9 @@ namespace ILGPU.Frontend
             for (int i = 0, e = methodParameters.Length; i < e; ++i)
             {
                 var parameter = methodParameters[i];
-                var paramType = builder.CreateType(parameter.ParameterType);
+                var paramType = typeof(Delegate).IsAssignableFrom(parameter.ParameterType)
+                    ? Context.HandleType
+                    : builder.CreateType(parameter.ParameterType);
                 Value ssaValue = MethodBuilder.AddParameter(paramType, parameter.Name);
                 var argRef = new VariableRef(
                     i + parameterOffset,
