@@ -13,6 +13,25 @@ namespace ILGPU.Tests
             : base(output, testContext)
         { }
 
+        internal static void ThisIndependentLambdaKernel(
+            Index1 index, ArrayView<int> data, SpecializedValue<Func<int, int>> op)
+        {
+            data[index] = op.Value(1);
+        }
+
+        static int Inc(int v) => v + 1;
+        [Fact]
+        public void ThisIndependentLambda()
+        {
+            Action<Index1, ArrayView<int>, SpecializedValue<Func<int, int>>> kernel = ThisIndependentLambdaKernel;
+
+            using var output = Accelerator.Allocate<int>(1);
+            Execute(kernel.Method, new Index1(1), output.View, new SpecializedValue<Func<int, int>>(Inc));
+
+            var expected = new int[] { 2 };
+            Verify(output, expected);
+        }
+
         public static TheoryData<object> SpecializedValueTestData =>
             new TheoryData<object>
         {

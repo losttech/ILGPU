@@ -25,6 +25,12 @@ namespace ILGPU.IR.Values
         /// <summary>
         /// Visits the node.
         /// </summary>
+        /// <param name="methodCall">The node.</param>
+        void Visit(IndirectMethodCall methodCall);
+
+        /// <summary>
+        /// Visits the node.
+        /// </summary>
         /// <param name="phiValue">The node.</param>
         void Visit(PhiValue phiValue);
 

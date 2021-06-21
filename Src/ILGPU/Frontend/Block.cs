@@ -280,7 +280,7 @@ namespace ILGPU.Frontend
                 if (instanceValue == null)
                 {
                     var declaringType = Builder.CreateType(methodBase.DeclaringType);
-                    if (!Intrinsics.IsIntrinsicArrayType(methodBase.DeclaringType))
+                    if (!Intrinsics.IsIntrinsicArrayType(methodBase.DeclaringType) && !methodBase.DeclaringType.IsDelegate())
                     {
                         declaringType = Builder.CreatePointerType(
                             declaringType,

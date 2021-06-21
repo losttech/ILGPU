@@ -49,6 +49,23 @@ namespace ILGPU.IR.Construction
         }
 
         /// <summary>
+        /// Creates a new indirect method call.
+        /// </summary>
+        /// <param name="location">The current location.</param>
+        /// <param name="target">The method target.</param>
+        /// <param name="values">The argument values.</param>
+        /// <returns>The created method call value.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal IndirectMethodCall CreateCall(
+            Location location,
+            ValueReference target,
+            ref ValueList values) =>
+            Append(new IndirectMethodCall(
+                GetInitializer(location),
+                target,
+                ref values));
+
+        /// <summary>
         /// Creates a new phi node builder.
         /// </summary>
         /// <param name="location">The current location.</param>

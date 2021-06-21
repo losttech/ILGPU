@@ -11,6 +11,7 @@
 
 using ILGPU.IR;
 using ILGPU.IR.Values;
+using System;
 
 namespace ILGPU.Backends
 {
@@ -357,6 +358,10 @@ namespace ILGPU.Backends
             /// <summary cref="IValueVisitor.Visit(MethodCall)"/>
             public void Visit(MethodCall methodCall) =>
                 CodeGenerator.GenerateCode(methodCall);
+
+            /// <summary cref="IValueVisitor.Visit(IndirectMethodCall)"/>
+            public void Visit(IndirectMethodCall methodCall) =>
+                throw new NotImplementedException();
 
             /// <summary cref="IValueVisitor.Visit(PhiValue)"/>
             public void Visit(PhiValue phiValue) =>

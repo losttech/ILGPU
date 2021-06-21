@@ -39,7 +39,6 @@ namespace ILGPU.Runtime
     /// <typeparam name="T">The element type.</typeparam>
     [StructLayout(LayoutKind.Sequential)]
     public struct SpecializedValue<T> : IEquatable<SpecializedValue<T>>
-        where T : unmanaged, IEquatable<T>
     {
         #region Instance
 

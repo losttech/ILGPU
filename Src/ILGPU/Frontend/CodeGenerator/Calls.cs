@@ -48,12 +48,24 @@ namespace ILGPU.Frontend
             // Handle device functions
             if (!Intrinsics.HandleIntrinsic(ref intrinsicContext, out var result))
             {
-                var targetFunction = DeclareMethod(intrinsicContext.Method);
+                if (method.DeclaringType.IsDelegate())
+                {
+                    var targetHandle = arguments[0];
+                    arguments = arguments.Slice(1, arguments.Count - 1);
+                    result = Builder.CreateCall(
+                        Location,
+                        targetHandle,
+                        ref arguments);
+                }
+                else
+                {
+                    var targetFunction = DeclareMethod(intrinsicContext.Method);
 
-                result = Builder.CreateCall(
-                    Location,
-                    targetFunction,
-                    ref arguments);
+                    result = Builder.CreateCall(
+                        Location,
+                        targetFunction,
+                        ref arguments);
+                }
             }
 
             // Setup result
@@ -93,7 +105,7 @@ namespace ILGPU.Frontend
             const BindingFlags ConstraintMethodFlags = BindingFlags.Instance |
                 BindingFlags.Public | BindingFlags.NonPublic;
 
-            if (!target.IsVirtual)
+            if (!target.IsVirtual || target.DeclaringType.IsSealed)
                 return target;
             if (constrainedType == null)
             {

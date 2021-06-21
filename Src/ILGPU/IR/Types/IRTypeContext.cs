@@ -404,6 +404,13 @@ namespace ILGPU.IR.Types
                         CreateType_Sync(type.GetElementType(), addressSpace),
                         addressSpace));
             }
+            else if (type.IsDelegate())
+            {
+                return Map(
+                    type,
+                    addressSpace,
+                    HandleType);
+            }
             else if (type.IsClass)
             {
                 throw new NotSupportedException(
